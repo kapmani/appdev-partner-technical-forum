@@ -260,7 +260,6 @@ Now run the `exportAndUploadWLS.10.3.6.Domain.sh` to check, export the existing 
 	####<Sep 25, 2017 7:01:22 PM> <WARNING> <ModelNotYetImplementedFeaturesScrubber> <transform> <JCSLCM-00579> <Export for Security configuration is not currently implemented and must be manually configured on the target domain.>
 	####<Sep 25, 2017 7:01:22 PM> <SEVERE> <ModelLibraryConflictScrubber> <checkWebAppArchive> <> <oracle.jcs.lifecycle.scrubber.ModelLibraryConflictScrubber>
 	####<Sep 25, 2017 7:01:22 PM> <INFO> <AppToCloudExport> <archiveApplications> <JCSLCM-02003> <Adding application to the archive: Petstore from /u01/content/cloud-native-devops-workshop/app-2-cloud/petstore.12.war>
-	####<Sep 25, 2017 7:01:22 PM> <WARNING> <AppToCloudExport> <archiveApplications> <JCSLCM-02002> <Failed to find application at /u01/content/cloud-native-devops-workshop/app-2-cloud/petstore.12.war: {2}. The file will not be included in the export archive.>
 	####<Sep 25, 2017 7:01:22 PM> <INFO> <AppToCloudExport> <archiveSharedLibraries> <JCSLCM-02003> <Adding library to the archive: jsf#2.0@1.0.0.0_2-0-2 from /u01/wins/wls1036/wlserver_10.3/common/deployable-libraries/jsf-2.0.war>
 	####<Sep 25, 2017 7:01:22 PM> <INFO> <AppToCloudExport> <run> <JCSLCM-02009> <Successfully exported model and artifacts to /u01/jcs_a2c_output/petstore_domain.zip. Overrides file written to /u01/jcs_a2c_output/petstore_domain.json>
 	####<Sep 25, 2017 7:01:22 PM> <INFO> <AppToCloudExport> <run> <JCSLCM-02028> <Uploading override file to cloud storage from /u01/jcs_a2c_output/petstore_domain.json>
