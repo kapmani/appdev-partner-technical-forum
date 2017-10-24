@@ -13,24 +13,17 @@ This tutorial demonstrates how to:
 + create Java Cloud Service instance using Oracle Java Cloud Service's AppToCloud function
 + import application running and exported as part of the on premise Weblogic 10.3.6 production domain.
 
-### Prerequisites ###
-
-- Running and "empty" [Database Cloud Service](../preparation.md) instance which has no Java Cloud Services dependency. It is already provisioned on your account, please check your [Database Cloud Service console](https://dbaas.oraclecloud.com/dbaas/faces/dbRunner.jspx). Service name: **techcoDB** (or **techcoDB2**)
-- [Download] SSH keypair (`pk.openssh`, `public.key`) into your `/u01/content/cloud-native-devops-workshop/cloud-utils` directory from this [location](https://drive.google.com/open?id=0B0MXC4qaECO6RHBWMEttdW9fOVk). Than change the permissions of the private key:
-
-		[oracle@localhost cloud-utils]$ chmod 400 /u01/content/cloud-native-devops-workshop/cloud-utils/pk.openssh		
-
 ### Steps ###
 
 #### Create Weblogic 10.3.6 domain and deploy the Petstore sample application ####
-Open a terminal and change to `GIT_REPO_LOCAL_CLONE/app-2-cloud` folder.
+Open a terminal and change to `/u01/content/cloud-native-devops-workshop/app-2-cloud` folder.
 
 	$ [oracle@localhost Desktop]$ cd /u01/content/cloud-native-devops-workshop/app-2-cloud
 	
-Run the `prepareEnv.sh` script which starts the database, creates Weblogic 10.3.6 domain, starts Weblogic servers and deploys the Petstore demo application. The script usage is: `prepareEnv.sh <db user> <db password> [<PDB name>]`. In the provided virtualbox environment run the script with the following parameters:
+Run the `runOnPremWLS.10.3.6.sh` script which starts the database, creates Weblogic 10.3.6 domain, starts Weblogic servers and deploys the Petstore demo application.
 
-    $ [oracle@localhost app-2-cloud]$ ./prepareEnv.sh system welcome1
-	  Oracle database (sid: orcl) is running.
+    $ [oracle@localhost app-2-cloud]$ ./runOnPremWLS.10.3.6.sh
+	  Oracle database (sid: XE) is running.
 	  Open pluggable database: PDBORCL.
     PDBORCL is already opened
 	  ********** CREATING PetStore DB USER **********************************************
@@ -172,42 +165,32 @@ Now check the Petstore demo application. Open a browser and enter *http://localh
 
 ![](images/on.prem.petstore.png)
 
-Note in the virtualbox environment there is no load balancer configured for the cluster which contains 2 managed servers. The 7003 and 7004 port is the direct access to the managed servers. 
+Note in the virtualbox environment there is no load balancer configured for the cluster which contains 2 managed servers. The 7003 and 7004 port are the direct access to the managed servers. 
 
-#### Export the domain using AppToCloud tool ####
+#### Export the domain and database ####
 
-If you are not using the prepared virtualbox environment you need to download the AppToCloud tool from this [location](http://www.oracle.com/technetwork/topics/cloud/downloads/index.html#apptocloud). You can also use the Download Center in the service console. Click your user name at the top of the console, select Help and then select Download Center. The tool is simply zipped so use an archive tool to extract `a2c-zip-installer.zip` to your destination directory. AppToCloud needs to be installed on the machine that is running Administration Server for your domain. In case of prepared virtualbox environment the tool is extracted to `/u01/oracle_jcs_app2cloud` folder. Verify that the file `a2c-healthcheck.sh` exists in the specified directory.
+In this step a prepared script will complete the following steps:
 
-	[oracle@localhost app-2-cloud]$ ls -la /u01/oracle_jcs_app2cloud/bin
-	total 60
-	drwxr-xr-x. 2 oracle oracle 4096 Oct 10 09:01 .
-	drwxr-x---. 7 oracle oracle 4096 Oct 11 00:16 ..
-	-rw-r-----. 1 oracle oracle 7582 Aug  4 11:25 a2c-export.cmd
-	-rwxr-x---. 1 oracle oracle 7137 Aug  4 11:25 a2c-export.sh
-	-rw-r-----. 1 oracle oracle 8683 Aug  4 11:25 a2c-healthcheck.cmd
-	-rwxr-x---. 1 oracle oracle 8169 Aug  4 11:25 a2c-healthcheck.sh
-	-rw-r-----. 1 oracle oracle 6095 Aug  4 11:25 a2c-import.cmd
-	-rwxr-x---. 1 oracle oracle 5673 Aug  4 11:25 a2c-import.sh
+1. App2Cloud tool checks the health of the running WebLogic domain created in the previous step.
+2. After the healthcheck export the domain including the custom deployments and upload to the Oracle Public Cloud Storage container.
+3. Export and import the on-premise database to the Oracle Public Cloud Database Service.
 
-Now use the `a2c-healthcheck` command in the AppToCloud tools to validate your on-premises WebLogic Server domain and applications in preparation to move them to an Oracle Java Cloud Service environment. The command requires the following parameters:
+The database export/import in this simplified case means the sample SQL script upload and execution which prepares the Oracle Public Cloud Database Service.
 
-1.  Top level directory of your WebLogic Server installation on the machine. This location is also referred to as `ORACLE_HOME`.
-2.  The administration URL of the Administration Server.
-3.  The user credentials for the domain’s system administrator.
+Now run the `exportAndUploadWLS.10.3.6.Domain.sh` to check, export the existing domain and prepare the Oracle Public Database Cloud Service. Because the script will interact the assigned Oracle Public Cloud Services you need to provide the credentials and identity domain allocated to you by the instructor:
 
-Now run the `a2c-healthcheck.sh` to check and export the running domain. Copy the following command and arguments into your terminal:
-
-	/u01/oracle_jcs_app2cloud/bin/a2c-healthcheck.sh -oh /u01/wins/wls1036 -adminUrl t3://localhost:7001 -adminUser weblogic -outputDir /u01/jcs_a2c_output
-
-During the execution enter the administrator’s password: *welcome1*, when prompted for it.
-
-	[oracle@localhost app-2-cloud]$ /u01/oracle_jcs_app2cloud/bin/a2c-healthcheck.sh -oh /u01/wins/wls1036 -adminUrl t3://localhost:7001 -adminUser weblogic -outputDir /u01/jcs_a2c_output
-	JDK version is 1.8.0_60-b27
+	[oracle@localhost app-2-cloud]$ ./exportAndUploadWLS.10.3.6.Domain.sh <USER> <PASSWORD> <DOMAIN_ID>
+	********** CREATE 'app2cloud' CLOUD STORAGE CONTAINER TO UPLOAD ARTIFACTS ***********
+	AUTH Token for storage:  AUTH_tka1972ac23bd04f640c7ce39ac2d25291
+	> PUT /v1/Storage-gse00012306/app2cloud HTTP/1.1
+	< HTTP/1.1 202 Accepted
+	<html><h1>Accepted</h1><p>The request is accepted for processing.</p></html>
+	********** HEALTHCHECK OF THE ON_PREMISE WLS 10.3.6 DOMAIN ***********
+	JDK version is 1.8.0_102-b14
 	A2C_HOME is /u01/oracle_jcs_app2cloud
 	/usr/java/latest/bin/java -Xmx512m -cp /u01/oracle_jcs_app2cloud/jcs_a2c/modules/features/jcsa2c_lib.jar -Djava.util.logging.config.class=oracle.jcs.lifecycle.util.JCSLifecycleLoggingConfig oracle.jcs.lifecycle.healthcheck.AppToCloudHealthCheck -oh /u01/wins/wls1036 -adminUrl t3://localhost:7001 -adminUser weblogic -outputDir /u01/jcs_a2c_output
 	The a2c-healthcheck program will write its log to /u01/oracle_jcs_app2cloud/logs/jcsa2c-healthcheck.log
-	Enter password: 
-	Checking Domain Health
+	Enter the password for WebLogic user weblogic: Checking Domain Health
 	Connecting to domain
 	
 	Connected to the domain petstore_domain
@@ -229,13 +212,18 @@ During the execution enter the administrator’s password: *welcome1*, when prom
 	Done Checking Applications Health
 	Checking Datasource Health
 	Done Checking Datasource Health
+	Checking JMS Health
+	
+	
+	
+	Done Checking JMS Health
 	Done Checking Domain Health
 	
 	Activity Log for HEALTHCHECK
 	
 	Informational Messages:
 	
-	1. JCSLCM-04037: Healthcheck Completed
+	  1. JCSLCM-04037: Health Check Completed
 	
 	An HTML version of this report can be found at /u01/jcs_a2c_output/reports/petstore_domain-healthcheck-activityreport.html
 	
@@ -243,61 +231,82 @@ During the execution enter the administrator’s password: *welcome1*, when prom
 	
 	
 	a2c-healthcheck completed successfully (exit code = 0)
-	[oracle@localhost bin]$ 
-
-Verify that the Health Check tool completed successfully (exit code is 0). Address any problems described in the Error Messages section of the Health Check output. Then run the Health Check tool again.
-You can also view the activity report as an HTML file. The report’s file name and location are included in the Health Check output.
-
-#### Migrate your on-premises Oracle Database to Oracle Database Cloud Service ####
-
-An Oracle Java Cloud Service instance requires an existing Oracle Database Cloud Service deployment to host the Oracle JRF schemas. These schemas are provisioned automatically when you create a new service instance.
-
-Your Java applications likely use additional on-premises databases. Oracle recommends that you migrate these application databases to Oracle Database Cloud Service as well. When you create an Oracle Java Cloud Service service instance with AppToCloud you can associate each of your existing Oracle WebLogic Server data sources with an application database running in Oracle Database Cloud Service.
-
-In this tutorial we will use the same Database Cloud Service to host Oracle JRF schemas and Petstore demo application's schema.
-
-There are many ways to migrate on-premises database to Database Cloud Service. In this use case we are using SQL scripts to create the necessary schema, tables and data for the demo application. For this purpose you need to execute a single script which needs the followinfg parameters:
-
-- **Database** Cloud Service's **administrator username**. Typically it is *system* if you have not changed.
-- **Database** Cloud Service's **administrator password**. Password you provided during Database Cloud Service instance creation. If you used the cloud tool and have not changed the default value in `environment.properties` then it is *Welcome_1*.
-- **SSH private key file**. Private key belongs to the Database Cloud Service. If you have followed the [preparation guide](preparation.md) guide the file name must be *pk.openssh* and the location is the `/u01/content/cloud-native-devops-workshop/cloud-utils` folder. If you have different name and location then provide that path and file name. For the pre-provisioned Database Cloud Service the passphrase is: *weblogic*
-- **Database** Cloud Service's public **IP address**. The public IP address of the instance to access to the service's VM. See next step to determine.
-- **Pluggable database name** is optional. In case Oracle Database Cloud Service the **default** is *PDB1* which will be used. If your instance has different name please specify.
-
-To get the public IP address using the console [Sign in](../common/sign.in.to.oracle.cloud.md) to [https://cloud.oracle.com/sign-in](https://cloud.oracle.com/sign-in). On the dashboard open the Database Cloud Service Console.
-
-![](images/open.dbcs.console.png)
-Click on your Database Cloud Service which will be associated with Java Cloud Service and host Petstore demo application's schema.
-
-![](images/open.dbcs.instance.details.png)
-Note the public IP address of the node hosting Database Cloud Service.
-
-![](images/dbcs.public.ip.png)
-
-Having all the necessary input run the script which will prepare the Database Cloud Service for Petstore demo application. If you have the default values just replace the correct IP address:
-
-	./prepareDBCS.sh system Welcome_1 ../cloud-utils/pk.openssh <YOUR_DBCS_PUBLIC_IP>
-
-The output should be similar to the following:
-
-	[oracle@localhost app-2-cloud]$ ./prepareDBCS.sh system <YOUR_DBCS_SYSTEM_PASSWORD ><YOUR_PRIVATEKEY_LOCATION> <YOUR_DBCS_PUBLIC_IP>
-	Enter passphrase for key '../pk.openssh': 
-	create_user.sh                                                                                                     100%  301     0.3KB/s   00:00    
-	create_user.sql                                                                                                    100%  101     0.1KB/s   00:00    
-	petstore.sql                                                                                                       100%   55KB  55.3KB/s   00:00    
-	Enter passphrase for key '../pk.openssh': 
+	********** EXPORT ON_PREMISE WLS 10.3.6 DOMAIN ***********
+	JDK version is 1.8.0_102-b14
+	A2C_HOME is /u01/oracle_jcs_app2cloud
+	/usr/java/latest/bin/java -Xmx512m -cp /u01/oracle_jcs_app2cloud/jcs_a2c/modules/features/jcsa2c_lib.jar -Djava.util.logging.config.class=oracle.jcs.lifecycle.util.JCSLifecycleLoggingConfig oracle.jcs.lifecycle.discovery.AppToCloudExport -oh /u01/wins/wls1036 -domainDir /u01/wins/wls1036/user_projects/domains/petstore_domain -archiveFile /u01/jcs_a2c_output/petstore_domain.zip -cloudStorageContainer Storage-gse00012306/app2cloud -cloudStorageUser cloud.admin
+	The a2c-export program will write its log to /u01/oracle_jcs_app2cloud/logs/jcsa2c-export.log
+	Enter the password for Oracle Storage Cloud user cloud.admin: ####<Sep 25, 2017 7:00:47 PM> <INFO> <AppToCloudExport> <getModel> <JCSLCM-02005> <Creating new model for domain /u01/wins/wls1036/user_projects/domains/petstore_domain>
+	####<Sep 25, 2017 7:00:47 PM> <INFO> <EnvironmentModelBuilder> <populateOrRefreshFromEnvironment> <FMWPLATFRM-08552> <Try to discover a WebLogic Domain in offline mode>
+	####<Sep 25, 2017 7:00:56 PM> <INFO> <EnvironmentDiscovery> <discoverDomain> <FMWPLATFRM-08683> <Discovering domain-level settings for domain petstore_domain-domain>
+	####<Sep 25, 2017 7:00:57 PM> <INFO> <EnvironmentDiscovery> <discoverDomain> <FMWPLATFRM-08694> <Discovering servers for domain petstore_domain-domain>
+	####<Sep 25, 2017 7:01:19 PM> <INFO> <EnvironmentDiscovery> <discoverDomain> <FMWPLATFRM-08696> <Discovering migratable targets for domain petstore_domain-domain>
+	####<Sep 25, 2017 7:01:19 PM> <INFO> <EnvironmentDiscovery> <discoverDomain> <FMWPLATFRM-08695> <Discovering clusters for domain petstore_domain-domain>
+	####<Sep 25, 2017 7:01:19 PM> <INFO> <EnvironmentDiscovery> <discoverDomain> <FMWPLATFRM-08698> <Discovering partitions for domain petstore_domain-domain>
+	####<Sep 25, 2017 7:01:19 PM> <INFO> <EnvironmentDiscovery> <discoverDomain> <FMWPLATFRM-08697> <Discovering node managers for domain petstore_domain-domain>
+	####<Sep 25, 2017 7:01:20 PM> <INFO> <EnvironmentDiscovery> <discoverDomain> <FMWPLATFRM-08680> <Discovering applications for domain petstore_domain-domain>
+	####<Sep 25, 2017 7:01:20 PM> <INFO> <EnvironmentDiscovery> <discoverDomain> <FMWPLATFRM-08686> <Discovering shared libraries for domain petstore_domain-domain>
+	####<Sep 25, 2017 7:01:20 PM> <INFO> <EnvironmentDiscovery> <discoverDomain> <FMWPLATFRM-08682> <Discovering data sources for domain petstore_domain-domain>
+	####<Sep 25, 2017 7:01:21 PM> <INFO> <EnvironmentDiscovery> <discoverDomain> <FMWPLATFRM-08693> <Discovering work managers for domain petstore_domain-domain>
+	####<Sep 25, 2017 7:01:21 PM> <INFO> <EnvironmentDiscovery> <discoverDomain> <FMWPLATFRM-08689> <Discovering persistent stores for domain petstore_domain-domain>
+	####<Sep 25, 2017 7:01:21 PM> <INFO> <EnvironmentDiscovery> <discoverDomain> <FMWPLATFRM-08691> <Discovering startup and shutdown classes for domain petstore_domain-domain>
+	####<Sep 25, 2017 7:01:21 PM> <INFO> <EnvironmentDiscovery> <discoverDomain> <FMWPLATFRM-08685> <Discovering JMS configuration for domain petstore_domain-domain>
+	####<Sep 25, 2017 7:01:21 PM> <INFO> <EnvironmentDiscovery> <discoverDomain> <FMWPLATFRM-08684> <Discovering foreign JNDI providers for domain petstore_domain-domain>
+	####<Sep 25, 2017 7:01:21 PM> <INFO> <EnvironmentDiscovery> <discoverDomain> <FMWPLATFRM-08687> <Discovering mail sessions for domain petstore_domain-domain>
+	####<Sep 25, 2017 7:01:21 PM> <INFO> <EnvironmentDiscovery> <discoverDomain> <FMWPLATFRM-08681> <Discovering Coherence clusters for domain petstore_domain-domain>
+	####<Sep 25, 2017 7:01:21 PM> <INFO> <EnvironmentDiscovery> <discoverDomain> <FMWPLATFRM-08692> <Discovering WLDF modules for domain petstore_domain-domain>
+	####<Sep 25, 2017 7:01:21 PM> <INFO> <EnvironmentDiscovery> <discoverDomain> <FMWPLATFRM-08690> <Discovering server classpath and system property settings for domain petstore_domain-domain>
+	####<Sep 25, 2017 7:01:21 PM> <INFO> <EnvironmentModelBuilder> <populateOrRefreshFromEnvironment> <FMWPLATFRM-08550> <End of the Environment discovery>
+	####<Sep 25, 2017 7:01:22 PM> <WARNING> <ModelNotYetImplementedFeaturesScrubber> <transform> <JCSLCM-00579> <Export for Security configuration is not currently implemented and must be manually configured on the target domain.>
+	####<Sep 25, 2017 7:01:22 PM> <SEVERE> <ModelLibraryConflictScrubber> <checkWebAppArchive> <> <oracle.jcs.lifecycle.scrubber.ModelLibraryConflictScrubber>
+	####<Sep 25, 2017 7:01:22 PM> <INFO> <AppToCloudExport> <archiveApplications> <JCSLCM-02003> <Adding application to the archive: Petstore from /u01/content/cloud-native-devops-workshop/app-2-cloud/petstore.12.war>
+	####<Sep 25, 2017 7:01:22 PM> <WARNING> <AppToCloudExport> <archiveApplications> <JCSLCM-02002> <Failed to find application at /u01/content/cloud-native-devops-workshop/app-2-cloud/petstore.12.war: {2}. The file will not be included in the export archive.>
+	####<Sep 25, 2017 7:01:22 PM> <INFO> <AppToCloudExport> <archiveSharedLibraries> <JCSLCM-02003> <Adding library to the archive: jsf#2.0@1.0.0.0_2-0-2 from /u01/wins/wls1036/wlserver_10.3/common/deployable-libraries/jsf-2.0.war>
+	####<Sep 25, 2017 7:01:22 PM> <INFO> <AppToCloudExport> <run> <JCSLCM-02009> <Successfully exported model and artifacts to /u01/jcs_a2c_output/petstore_domain.zip. Overrides file written to /u01/jcs_a2c_output/petstore_domain.json>
+	####<Sep 25, 2017 7:01:22 PM> <INFO> <AppToCloudExport> <run> <JCSLCM-02028> <Uploading override file to cloud storage from /u01/jcs_a2c_output/petstore_domain.json>
+	####<Sep 25, 2017 7:01:25 PM> <INFO> <AppToCloudExport> <run> <JCSLCM-02028> <Uploading archive file to cloud storage from /u01/jcs_a2c_output/petstore_domain.zip>
+	####<Sep 25, 2017 7:01:25 PM> <INFO> <AppToCloudExport> <run> <JCSLCM-02009> <Successfully exported model and artifacts to https://gse00012306.storage.oraclecloud.com. Overrides file written to Storage-gse00012306/app2cloud/petstore_domain.json>
 	
-	SQL*Plus: Release 12.1.0.2.0 Production on Tue Oct 11 09:32:46 2016
+	Activity Log for EXPORT
+	
+	Informational Messages:
+	
+	  1. JCSLCM-02030: Uploaded override file to Oracle Cloud Storage container Storage-gse00012306/app2cloud
+	  2. JCSLCM-02030: Uploaded archive file to Oracle Cloud Storage container Storage-gse00012306/app2cloud
+	  3. JCSLCM-02031: Export Completed
+	
+	Warning Messages:
+	
+	  1. JCSLCM-02002: Failed to find application at /u01/content/cloud-native-devops-workshop/app-2-cloud/petstore.12.war: {2}. The file will not be included in the export archive.
+	
+	Features Not Yet Implemented Messages:
+	
+	  1. JCSLCM-00579: Export for Security configuration is not currently implemented and must be manually configured on the target domain.
+	
+	An HTML version of this report can be found at /u01/jcs_a2c_output/reports/petstore_domain-export-activityreport.html
+	
+	Successfully exported model and artifacts to https://gse00012306.storage.oraclecloud.com. Overrides file written to Storage-gse00012306/app2cloud/petstore_domain.json
+	
+	
+	a2c-export completed successfully (exit code = 0)
+	********** DATABASE CLOUD SERVICE PREPARATION ***********
+	Database Cloud Service IP address: 129.158.73.174
+	Warning: Permanently added '129.158.73.174' (RSA) to the list of known hosts.
+	create_user.sh                                                                                                                                100%  301     3.6KB/s   00:00    
+	create_user.sql                                                                                                                               100%  101     1.3KB/s   00:00    
+	petstore.sql                                                                                                                                  100%   55KB 184.6KB/s   00:00    
+	
+	SQL*Plus: Release 12.1.0.2.0 Production on Mon Sep 25 23:01:30 2017
 	
 	Copyright (c) 1982, 2014, Oracle.  All rights reserved.
 	
-	Last Successful login time: Mon Sep 12 2016 12:40:26 +00:00
 	
 	Connected to:
 	Oracle Database 12c Enterprise Edition Release 12.1.0.2.0 - 64bit Production
+	With the Partitioning, OLAP, Advanced Analytics and Real Application Testing options
 	
 	SQL> DROP USER petstore cascade
-	        *
+	          *
 	ERROR at line 1:
 	ORA-01918: user 'PETSTORE' does not exist
 	
@@ -309,14 +318,16 @@ The output should be similar to the following:
 	Grant succeeded.
 	
 	SQL> Disconnected from Oracle Database 12c Enterprise Edition Release 12.1.0.2.0 - 64bit Production
+	With the Partitioning, OLAP, Advanced Analytics and Real Application Testing options
 	
-	SQL*Plus: Release 12.1.0.2.0 Production on Tue Oct 11 09:32:46 2016
+	SQL*Plus: Release 12.1.0.2.0 Production on Mon Sep 25 23:01:31 2017
 	
 	Copyright (c) 1982, 2014, Oracle.  All rights reserved.
 	
 	
 	Connected to:
 	Oracle Database 12c Enterprise Edition Release 12.1.0.2.0 - 64bit Production
+	With the Partitioning, OLAP, Advanced Analytics and Real Application Testing options
 	
 	SQL> SQL>   2    3    4    5    6    7  
 	Table created.
@@ -330,77 +341,11 @@ The output should be similar to the following:
 	Commit complete.
 	
 	SQL> Disconnected from Oracle Database 12c Enterprise Edition Release 12.1.0.2.0 - 64bit Production
-	[oracle@localhost app-2-cloud]$ 
+	With the Partitioning, OLAP, Advanced Analytics and Real Application Testing options
 
-The script is re-runnable. In case of failure try to fix the parameter or other issue and run again.
-
-Now the given Database Cloud Service has a `PETSTORE` schema which contains the necessary tables and data. The password for `PETSTORE` has been set to the provided Database Cloud Service's administrator password.
-
-#### Exporting an On-Premises WebLogic Domain ####
-
-The Export tool captures a domain’s configuration and Java applications. It updates the archive file that was previously generated by the Health Check tool, generates a JSON file, and uploads these AppToCloud artifacts to an existing storage container in the Oracle Storage Cloud Service.
-
-For simplification we can recommend to use the storage container what was provided for Database Cloud Service. If you don't remember check the path on the Database Cloud Service detail page.
-
-![](images/dbcs.storage.png)
-If you follow the recommendations and want to create new container see [Creating Containers](http://www.oracle.com/pls/topic/lookup?ctx=cloud&id=CSSTO00708) in Using Oracle Storage Cloud Service.
-
-Now use the `a2c-export.sh` script in the AppToCloud tools to capture your on-premises WebLogic Server domain and applications and to move them to a storage container that’s accessible to your Oracle Java Cloud Service environment. The command requires the following parameters:
-
-1.  Top level directory of the WebLogic Server domain.
-2.  Top level directory of your WebLogic Server installation.
-2.  Folder to save archive and JSON config file.
-3.  Cloud storage container. Format of the path: `Storage-<IDENTITY_DOMAIN>/MyContainer`. If you have not changed the container name in the `environment.properties` then it has to be `app2cloud`.
-4.  Cloud storage user credential.
-
-Using the parameters above run the `a2c-export.sh` to complete the export and upload. The following parameters belong to prepared virtualbox environment except the Cloud storage conatiner and credentials. Please change according to your environment. When prompted, enter the password for your cloud storage user.
-
-	[oracle@localhost app-2-cloud]$ /u01/oracle_jcs_app2cloud/bin/a2c-export.sh -oh /u01/wins/wls1036 -domainDir /u01/wins/wls1036/user_projects/domains/petstore_domain -archiveFile /u01/jcs_a2c_output/petstore_domain.zip -cloudStorageContainer Storage-<IDENTITY_DOMAIN>/app2cloud -cloudStorageUser <YOUR_CLOUD_STORAGE_USER>
-	JDK version is 1.8.0_60-b27
-	A2C_HOME is /u01/oracle_jcs_app2cloud
-	/usr/java/latest/bin/java -Xmx512m -DUseSunHttpHandler=true -cp /u01/oracle_jcs_app2cloud/jcs_a2c/modules/features/jcsa2c_lib.jar -Djava.util.logging.config.class=oracle.jcs.lifecycle.util.JCSLifecycleLoggingConfig oracle.jcs.lifecycle.discovery.AppToCloudExport -oh /u01/wins/wls1036 -domainDir /u01/wins/wls1036/user_projects/domains/petstore_domain -archiveFile /u01/jcs_a2c_output/petstore_domain.zip -cloudStorageContainer Storage-appdev004/app2cloud -cloudStorageUser peter.nagy@oracle.com
-	The a2c-export program will write its log to /u01/oracle_jcs_app2cloud/logs/jcsa2c-export.log
-	Enter Storage Cloud password: 
-	####<Oct 11, 2016 12:30:52 AM> <INFO> <AppToCloudExport> <getModel> <JCSLCM-02005> <Creating new model for domain /u01/wins/wls1036/user_projects/domains/petstore_domain>
-	####<Oct 11, 2016 12:30:53 AM> <INFO> <EnvironmentModelBuilder> <populateOrRefreshFromEnvironment> <FMWPLATFRM-08552> <Try to discover a WebLogic Domain in offline mode>
-	####<Oct 11, 2016 12:31:03 AM> <INFO> <EnvironmentModelBuilder> <populateOrRefreshFromEnvironment> <FMWPLATFRM-08550> <End of the Environment discovery>
-	####<Oct 11, 2016 12:31:03 AM> <WARNING> <ModelNotYetImplementedFeaturesScrubber> <transform> <JCSLCM-00579> <Export for Security configuration is not currently implemented and must be manually configured on the target domain.>
-  	####<Oct 11, 2016 12:31:03 AM> <INFO> <AppToCloudExport> <archiveApplications> <JCSLCM-02003> <Adding application to the archive: Petstore from /u01/content/cloud-native-devops-workshop/app-2-cloud/petstore.12.war>
-	####<Oct 11, 2016 12:31:04 AM> <INFO> <AppToCloudExport> <archiveSharedLibraries> <JCSLCM-02003> <Adding library to the archive: jsf#2.0@1.0.0.0_2-0-2 from /u01/wins/wls1036/wlserver_10.3/common/deployable-libraries/jsf-2.0.war>
-	####<Oct 11, 2016 12:31:05 AM> <INFO> <AppToCloudExport> <run> <JCSLCM-02009> <Successfully exported model and artifacts to /u01/jcs_a2c_output/petstore_domain.zip. Overrides file written to /u01/jcs_a2c_output/petstore_domain.json>
-	####<Oct 11, 2016 12:31:05 AM> <INFO> <AppToCloudExport> <run> <JCSLCM-02028> <Uploading override file to cloud storage from /u01/jcs_a2c_output/petstore_domain.json>
-	####<Oct 11, 2016 12:31:09 AM> <INFO> <AppToCloudExport> <run> <JCSLCM-02028> <Uploading archive file to cloud storage from /u01/jcs_a2c_output/petstore_domain.zip>
-	####<Oct 11, 2016 12:33:47 AM> <INFO> <AppToCloudExport> <run> <JCSLCM-02009> <Successfully exported model and artifacts to https://appdev004.storage.oraclecloud.com. Overrides file written to Storage-appdev004/app2cloud/petstore_domain.json>
-	
-	Activity Log for EXPORT
-	
-	Informational Messages:
-	
-	1. JCSLCM-02030: Uploaded override file to Oracle Cloud Storage container Storage-appdev004/app2cloud
-	2. JCSLCM-02030: Uploaded archive file to Oracle Cloud Storage container Storage-appdev004/app2cloud
-	
-	Features Not Yet Implemented Messages:
-	
-	1. JCSLCM-00579: Export for Security configuration is not currently implemented and must be manually configured on the target domain.
-	
-	An HTML version of this report can be found at /u01/jcs_a2c_output/reports/petstore_domain-export-activityreport.html
-	
-	Successfully exported model and artifacts to https://appdev004.storage.oraclecloud.com. Overrides file written to Storage-appdev004/app2cloud/petstore_domain.json
-	
-	
-	a2c-export completed successfully (exit code = 0)
 	[oracle@localhost bin]$ 
 
-Verify that the Export tool completed successfully (exit code has to be 0). Also note the name of the generated JSON file.
-
-Address any problems described in the Error Messages section of the Export tool output. Then run the Export tool again.
-You can also view the activity report as an HTML file. The report’s file name and location are included in the Export tool output.
-
-After exporting your domain and uploading the files to a storage container, you are ready to create an Oracle Java Cloud Service instance.
-
-Before moving forward stop the WebLogic 10.3.6. *petstore* domain to free up resources on your desktop. Now use `killall` to avoid administration tools even if it is not a graceful shutdown.
-
-	 [oracle@localhost bin]$ killall java
+After the successful export you are ready to create an Oracle Java Cloud Service instance.
 
 #### Creating an Oracle Java Cloud Service Instance with AppToCloud ####
 
@@ -411,9 +356,19 @@ Most of the steps that you use to create a service instance with AppToCloud are 
 - You must provide the location of your AppToCloud JSON file on Oracle Storage Cloud Service.
 - You must associate each Data Source in your original WebLogic Server domain with an existing Oracle Database Cloud - Database as a Service database deployment.
 
-[Sign in](../common/sign.in.to.oracle.cloud.md) to [https://cloud.oracle.com/sign-in](https://cloud.oracle.com/sign-in). On the dashboard open the Java Cloud Service Console.
+Open a browser and sign in to [Oracle Public Cloud Services](https://cloud.oracle.com/sign-in). 
+Select *Traditional Cloud Account* type and the datacenter where your services are available. Oracle Public Cloud Services details are given by the instructor.
+Click **My Services**.
+![](images/01.select.datacenter.png)
 
-![](images/10.dashboard.png)
+Enter the name of the identity domain. Click **Go**.
+![](images/02.identity.domain.png)
+
+Provide the username and password and click **Sign In**.
+![](images/03.username.password.png)
+
+On the dashboard click the menu on the top left corner. The list of services will fly in from the left. Select **Java**.
+![](images/04.navigate.jcs.png)
 
 If this is your first time to open the console the Welcome page appears. Click on **Go To Console** or **Services**.
 ![](images/11.jcs.welcome.png)
@@ -421,13 +376,13 @@ If this is your first time to open the console the Welcome page appears. Click o
 Click **Create Service** and select the **Java Cloud Service — AppToCloud** option.
 ![](images/12.jcs.console.png)
 
-Provide details about the JSON file generated by the Export tool. Enter the fully-qualified name of the JSON file that was uploaded to Oracle Storage Cloud Service. Example: `Storage-MyAccount/Container1/domain1.json`. Enter the name and password of a cloud user that has access to this storage container.
+Provide details about the JSON file generated by the Export tool. Enter the fully-qualified name of the JSON file that was uploaded to Oracle Storage Cloud Service. The script in the previous step uploaded to: `Storage-<DOMAIN_ID>/app2cloud/petstore_domain.json`. Enter the user name and password of the cloud user assigned to you by the instructor.
 ![](images/13.app2cloud.storage.png)
 
 Select **Service Level** and **Billing Frequency**. Click **Next**.
 ![](images/14.service.billing.png)
 
-Select **Software Release**. Click **Next**.
+Select version 12.1.3 for **Software Release**. Click **Next**.
 ![](images/15.sw.release.png)
 
 Select **Software Edition**. Click **Next**.
@@ -437,7 +392,7 @@ On the Java Cloud Service Details page complete the necessary fields.
 
 - Service name: **petstore**
 - Description: optional.
-- SSH public key. Use the same what was provided for the Database Cloud Service. That can be found in the `environment.properties` or in the file `public.key` located in `/u01/content/cloud-native-devops-workshop/cloud-utils/`.The parameter name is **ssh.public.key=** if you copy from the `environment.properties`. Click the **Edit** button to open the SSH public key dialog and copy the **ssh.public.key** property value or the `public.key` file's content to the Key Value text area. However you can also create a new key pair if you would like to avoid the find-copy-paste steps.
+- SSH public key. Click the **Edit** button to open the SSH public key dialog and select the **Create a New Key** option. In this case the key will be generated for you what you need to download. Download anywhere you want the key is not needed in the lab.
 - Enable access to Administration Consoles: enable.
 - Shape: use the default, small instance.
 - Username: Weblogic administrator username. For example: *weblogic*
@@ -449,7 +404,7 @@ On the Java Cloud Service Details page complete the necessary fields.
 - Create Cloud Storage Container: enable to create the container defined above for Java Cloud Service.
 - Database: Database Cloud Service for required schema. As we recommended use the same what was prepared previously for Petstore demo application.
 - Database Administrator Username: **sys**.
-- Database Password: the password of Database Administrator. If you have not changed the value in the `environment.properties` then it is *Welcome_1*.
+- Database Password: the password of Database Administrator which is *Welcome_1*.
 - PDB Name: leave *Default* which is usually PDB1.
 - Provision Load Balancer: Yes.
 - Load Balancer details: leave the default.
