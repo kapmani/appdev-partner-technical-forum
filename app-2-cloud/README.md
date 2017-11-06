@@ -274,10 +274,6 @@ Now run the `exportAndUploadWLS.10.3.6.Domain.sh` to check, export the existing 
 	  2. JCSLCM-02030: Uploaded archive file to Oracle Cloud Storage container Storage-gse00012306/app2cloud
 	  3. JCSLCM-02031: Export Completed
 	
-	Warning Messages:
-	
-	  1. JCSLCM-02002: Failed to find application at /u01/content/cloud-native-devops-workshop/app-2-cloud/petstore.12.war: {2}. The file will not be included in the export archive.
-	
 	Features Not Yet Implemented Messages:
 	
 	  1. JCSLCM-00579: Export for Security configuration is not currently implemented and must be manually configured on the target domain.
