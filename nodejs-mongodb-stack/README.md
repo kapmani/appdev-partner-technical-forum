@@ -219,7 +219,7 @@ Now you have to see your *testOCCS* (or different if you specified other name) C
 
 ![alt text](images/30.occs.open.admin.console.png)
 
-Due to the reason that the certification hasn't been setup you will get a security warning. Ignore that and allow to open the page. Enter the Administrator's credential for your Container Cloud Service. If you followed the guide the username has to be *admin*. Click **Login**.
+Due to the reason that the certification hasn't been setup you will get a security warning. Ignore that and allow to open the page. Enter the Administrator's credential for your Container Cloud Service. If you followed the guide the username has to be *admin*. (The password is *Welcome1+* if the service was provisioned in advance.) Click **Login**.
 
 ![alt text](images/31.occs.console.login.png)
 

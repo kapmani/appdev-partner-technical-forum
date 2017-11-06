@@ -411,7 +411,7 @@ On the **Additional Service Details** screen, select the first **Application Dat
 - DBCS Instance: select the Database Cloud Service DBCS Instance for Petstore application and which was also selected to host JRF required schemas on the previous screen.
 - Username: **petstore**. This data source will connect to the database as this user.
 - Password: the password of Database Administrator. If you have not changed the value in the `environment.properties` then it is *Welcome_1*. (The script has set the same password for **petstore** schema.)
-- PDB: leave the **default**.
+- PDB: leave the **default** or write **PDB1**.
 
 Click **OK** to accept your changes. Click **Next**.
 ![](images/18.jcs.datasource.png)
