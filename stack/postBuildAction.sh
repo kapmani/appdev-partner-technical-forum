@@ -9,6 +9,7 @@ export ID_DOMAIN=${1}
 export USER_ID=${2}
 export USER_PASSWORD=${3}
 export CONTAINER_NAME=${4}
+export STORAGE_ID=${5}
 
 export ARCHIVE_FILE="$(find -type f -name '*.zip')"
 
@@ -25,11 +26,11 @@ echo "Found artifact: $ARCHIVE_FILE"
 echo '\n[info] Creating container\n'
 curl -i -X PUT \
     -u ${USER_ID}:${USER_PASSWORD} \
-    https://${ID_DOMAIN}.storage.oraclecloud.com/v1/Storage-$ID_DOMAIN/$CONTAINER_NAME
+    https://Storage-${ID_DOMAIN}.storage.oraclecloud.com/v1/Storage-$STORAGE_ID/$CONTAINER_NAME
 
 # PUT ARCHIVE IN STORAGE CONTAINER
 echo '\n[info] Uploading application to storage\n'
 curl -i -X PUT \
   -u ${USER_ID}:${USER_PASSWORD} \
-  https://${ID_DOMAIN}.storage.oraclecloud.com/v1/Storage-$ID_DOMAIN/$CONTAINER_NAME/$ARCHIVE_FILE_NAME \
+  https://Storage-${ID_DOMAIN}.storage.oraclecloud.com/v1/Storage-$STORAGE_ID/$CONTAINER_NAME/$ARCHIVE_FILE_NAME \
       -T $ARCHIVE_FILE
